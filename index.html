@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Twin MIM demo</title>
+<style>
+:root {
+  --navy: #0B2340;
+  --blue: #103A6B;
+  --blue-mid: #1E5AA0;
+  --blue-light: #5B8FD9;
+  --accent: #009B77;      /* verde istituzionale */
+  --accent-2: #00A9E0;    /* ciano dati */
+  --gold: #B8860B;
+  --green: #2E7D32;
+  --red: #C62828;
+  --orange: #E65100;
+  --purple: #6A1B9A;
+  --grey-900: #17202A;
+  --grey-800: #2C3742;
+  --grey-700: #4A5560;
+  --grey-600: #667080;
+  --grey-500: #7A8494;
+  --grey-300: #C8CCD0;
+  --grey-200: #E1E4E8;
+  --grey-100: #F2F4F7;
+  --grey-50: #FAFBFC;
+  --bg: #FFFFFF;
+  --bg-soft: #F1F5F9;
+  --ink: #0B2340;         /* testo titoli */
+  --ink-body: #33414F;    /* testo corrente */
+  --line: #E3E8EF;        /* bordi */
+  --shadow-sm: 0 1px 2px rgba(11, 35, 64, 0.05);
+  --shadow-md: 0 6px 20px rgba(11, 35, 64, 0.07);
+  --shadow-lg: 0 14px 40px rgba(11, 35, 64, 0.10);
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 40px;
+  --grid-line: #EEF1F4;
+  --grid-line-strong: #DADCE0;
+}
+
+.tabular { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px; line-height: 1.55; color: var(--ink-body);
+  background: var(--bg-soft);
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---------- Header ---------- */
+.header {
+  background: #FFFFFF;
+  color: var(--ink); padding: 15px 40px;
+  border-top: 3px solid var(--blue);
+  border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 12px rgba(11,35,64,0.05);
+}
+.header-inner {
+  max-width: 1320px; margin: 0 auto; position: relative; min-height: 84px;
+  display: flex; align-items: center; justify-content: center;
+}
+.brand-left {
+  position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 7px; width: 210px;
+}
+.brand-emblem { height: 56px; width: auto; display: block; margin: 0 auto; }
+.brand-min-name { font-size: 11px; font-weight: 700; color: var(--ink); text-align: center; line-height: 1.3; letter-spacing: 0.3px; text-transform: uppercase; }
+.brand-title { font-size: 21px; font-weight: 300; letter-spacing: -0.3px; color: var(--ink); text-align: center; padding: 0 235px; }
+.brand-title strong { font-weight: 700; color: var(--blue); }
+.brand-meta { position: absolute; top: 0; right: 0; font-size: 11.5px; color: var(--grey-600); text-align: right; line-height: 1.6; }
+.brand-meta strong { color: var(--ink); }
+.brand-meta .v { color: var(--accent); font-weight: 600; }
+@media (max-width: 860px){
+  .header-inner { flex-direction: column; align-items: flex-start; gap: 12px; min-height: 0; }
+  .brand-left, .brand-meta { position: static; transform: none; align-items: flex-start; text-align: left; }
+  .brand-min-name { text-align: left; }
+  .brand-title { padding: 0; text-align: left; }
+}
+
+/* ---------- Top nav ---------- */
+.topnav { background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 81px; z-index: 99; box-shadow: var(--shadow-sm); }
+.topnav-inner { max-width: 1320px; margin: 0 auto; display: flex; flex-wrap: nowrap; width: 100%; }
+.topnav-progress { height: 3px; background: var(--grey-100); position: relative; overflow: hidden; }
+.topnav-progress-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 14%; background: linear-gradient(90deg, var(--blue) 0%, var(--accent) 100%); transition: width 0.35s cubic-bezier(0.4,0,0.2,1); }
+.tab-btn { flex: 1 1 0; min-width: 0; background: none; border: none; padding: 14px 8px; font-family: inherit; font-size: 12.5px; font-weight: 500; color: var(--grey-700); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+.tab-btn:hover { color: var(--blue); background: var(--grey-50); }
+.tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 600; }
+.tab-btn .tab-num { display: inline-block; width: 19px; height: 19px; line-height: 19px; text-align: center; background: var(--grey-200); color: var(--grey-700); border-radius: 50%; font-size: 10.5px; font-weight: 700; margin-right: 6px; }
+.tab-btn.active .tab-num { background: var(--blue); color: #fff; }
+
+/* ---------- Layout ---------- */
+.main { max-width: 1320px; margin: 0 auto; padding: 36px 40px 60px; }
+.module { display: none; animation: fadeIn 0.4s ease-out; }
+.module.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: translateY(0);} }
+.module-header { margin-bottom: 28px; padding-bottom: 18px; border-bottom: 2px solid var(--grey-200); }
+.module-eyebrow { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--blue); font-weight: 700; margin-bottom: 8px; }
+.module-title { font-size: 27px; font-weight: 300; color: var(--navy); letter-spacing: -0.5px; }
+.module-title strong { font-weight: 700; }
+.module-subtitle { font-size: 14.5px; color: var(--grey-700); margin-top: 12px; max-width: 960px; line-height: 1.6; }
+
+.section-title { font-size: 16px; font-weight: 700; color: var(--navy); margin: 34px 0 14px; padding-left: 12px; border-left: 4px solid var(--accent); }
+.section-intro { font-size: 13px; color: var(--grey-700); margin-bottom: 16px; max-width: 960px; line-height: 1.6; }
+
+/* ---------- Grids ---------- */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 900px){ .grid-2,.grid-3,.grid-4 { grid-template-columns: 1fr; } }
+
+/* ---------- Stat cards ---------- */
+.stat { background: #fff; border: 1px solid var(--grey-200); border-top: 3px solid var(--blue); border-radius: 6px; padding: 18px; box-shadow: var(--shadow-sm); }
+.stat.accent { border-top-color: var(--accent); }
+.stat.gold { border-top-color: var(--gold); }
+.stat.red { border-top-color: var(--red); }
+.stat-value { font-size: 26px; font-weight: 700; color: var(--navy); letter-spacing: -0.5px; }
+.stat-value .u { font-size: 14px; font-weight: 600; color: var(--grey-600); }
+.stat-label { font-size: 12.5px; font-weight: 600; color: var(--grey-800); margin-top: 4px; }
+.stat-detail { font-size: 11px; color: var(--grey-600); margin-top: 6px; line-height: 1.45; }
+
+/* ---------- Cards ---------- */
+.card { background: #fff; border: 1px solid var(--grey-200); border-radius: 6px; padding: 20px; box-shadow: var(--shadow-sm); }
+.card-title { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.card-title .ico { width: 26px; height: 26px; border-radius: 6px; background: var(--grey-100); color: var(--blue); display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex: none; }
+.card ul { padding-left: 18px; }
+.card li { margin-bottom: 5px; font-size: 12.5px; color: var(--grey-700); line-height: 1.55; }
+
+/* ---------- Callouts ---------- */
+.callout { background: #fff; border: 1px solid var(--grey-200); border-left: 4px solid var(--blue-mid); border-radius: 4px; padding: 14px 16px; font-size: 12.5px; color: var(--grey-700); line-height: 1.6; margin: 16px 0; }
+.callout strong { color: var(--navy); }
+.callout-good { border-left-color: var(--green); background: rgba(46,125,50,0.03); }
+.callout-good strong { color: #1B5E20; }
+.callout-warn { border-left-color: var(--gold); background: rgba(184,134,11,0.04); }
+.callout-warn strong { color: #8E6500; }
+.callout-accent { border-left-color: var(--accent); background: rgba(0,155,119,0.04); }
+
+/* ---------- Pills ---------- */
+.pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.2px; }
+.pill-blue { background: rgba(30,90,160,0.12); color: var(--blue); }
+.pill-green { background: rgba(46,125,50,0.13); color: #1B5E20; }
+.pill-red { background: rgba(198,40,40,0.12); color: var(--red); }
+.pill-orange { background: rgba(230,81,0,0.12); color: var(--orange); }
+.pill-gold { background: rgba(184,134,11,0.14); color: #8E6500; }
+.pill-grey { background: var(--grey-200); color: var(--grey-700); }
+.pill-teal { background: rgba(0,169,224,0.14); color: #007399; }
+
+/* ---------- Tables ---------- */
+.table-wrap { overflow-x: auto; border: 1px solid var(--grey-200); border-radius: 6px; box-shadow: var(--shadow-sm); }
+table.dt { width: 100%; border-collapse: collapse; font-size: 12px; background: #fff; }
+table.dt th { background: var(--blue); color: #fff; text-align: left; padding: 9px 11px; font-weight: 600; font-size: 11px; white-space: nowrap; }
+table.dt th.num, table.dt td.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.dt td { padding: 8px 11px; border-bottom: 1px solid var(--grey-100); color: var(--grey-800); }
+table.dt tbody tr:hover { background: var(--grey-50); }
+table.dt tbody tr:last-child td { border-bottom: none; }
+.t-src { font-size: 11px; color: var(--grey-600); margin-top: 8px; font-style: italic; }
+code { font-family: 'Cascadia Code','Courier New', Consolas, monospace; font-size: 11px; background: rgba(16,58,107,0.07); color: var(--navy); padding: 1px 5px; border-radius: 3px; border: 1px solid rgba(16,58,107,0.12); }
+
+/* ---------- Hero (exec summary) ---------- */
+.hero { background: linear-gradient(135deg, #EEF4FB 0%, #FFFFFF 58%); color: var(--ink); border: 1px solid var(--line); border-left: 5px solid var(--blue); border-radius: 12px; padding: 34px 40px; margin-bottom: 28px; position: relative; overflow: hidden; box-shadow: var(--shadow-md); }
+.hero::after { content: ""; position: absolute; right: -70px; top: -70px; width: 280px; height: 280px; border-radius: 50%; background: radial-gradient(circle, rgba(16,58,107,0.07), transparent 70%); }
+.hero-tag { display: inline-block; font-size: 10.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--blue); font-weight: 700; border: 1px solid rgba(16,58,107,0.25); background: rgba(16,58,107,0.05); padding: 4px 10px; border-radius: 20px; margin-bottom: 16px; }
+.hero-title { font-size: 27px; font-weight: 300; line-height: 1.3; max-width: 900px; position: relative; z-index: 1; color: var(--ink); }
+.hero-title strong { font-weight: 700; color: var(--blue); }
+.hero-sub { font-size: 14px; color: var(--ink-body); margin-top: 14px; max-width: 880px; line-height: 1.65; position: relative; z-index: 1; }
+.hero-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 28px; position: relative; z-index: 1; border-top: 1px solid var(--line); padding-top: 22px; }
+@media (max-width: 900px){ .hero-stats { grid-template-columns: repeat(2,1fr); gap: 18px 0;} }
+.hero-stats > div { padding: 0 22px; border-right: 1px solid var(--line); }
+.hero-stats > div:first-child { padding-left: 0; }
+.hero-stats > div:last-child { border-right: none; }
+.hero-stat-num { font-size: 27px; font-weight: 700; letter-spacing: -0.5px; color: var(--ink); }
+.hero-stat-num .u { font-size: 14px; font-weight: 600; color: var(--grey-500); }
+.hero-stat-lbl { font-size: 11.5px; color: var(--grey-600); margin-top: 4px; }
+
+/* ---------- Flow steps ---------- */
+.flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 18px 0; }
+@media (max-width: 900px){ .flow { grid-template-columns: 1fr 1fr; } }
+.flow-step { background: #fff; border: 1px solid var(--grey-200); border-radius: 6px; padding: 16px; box-shadow: var(--shadow-sm); position: relative; }
+.flow-step .fh { font-size: 13.5px; font-weight: 700; color: var(--navy); display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+.flow-num { width: 24px; height: 24px; border-radius: 50%; background: var(--blue); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex: none; }
+.flow-body { font-size: 12px; color: var(--grey-700); line-height: 1.5; }
+
+/* ---------- Step flow (pipeline concisa) ---------- */
+.stepflow { display: flex; margin: 22px 0 10px; }
+.stepflow-node { flex: 1 1 0; text-align: center; position: relative; padding: 0 8px; }
+.stepflow-node::before { content: ""; position: absolute; top: 27px; left: 50%; width: 100%; height: 3px; background: linear-gradient(90deg, var(--blue), var(--accent)); z-index: 0; border-radius: 2px; }
+.stepflow-node:last-child::before { display: none; }
+.step-circle { position: relative; z-index: 1; width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 12px; background: #fff; border: 3px solid var(--blue); color: var(--blue); display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 12px rgba(11,35,64,0.12); }
+.step-circle .n { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); }
+.step-circle svg { width: 26px; height: 26px; }
+.step-title { font-size: 14px; font-weight: 700; color: var(--ink); }
+.step-cap { font-size: 11.5px; color: var(--grey-600); margin: 5px auto 0; line-height: 1.45; max-width: 210px; }
+.stepflow-node.s2 .step-circle, .stepflow-node.s2 .step-circle .n { border-color: var(--blue-mid); color: var(--blue-mid); }
+.stepflow-node.s2 .step-circle .n { background: var(--blue-mid); color: #fff; }
+.stepflow-node.s3 .step-circle { border-color: var(--accent-2); color: #007399; }
+.stepflow-node.s3 .step-circle .n { background: var(--accent-2); color: #04212b; }
+.stepflow-node.s4 .step-circle { border-color: var(--accent); color: var(--accent); }
+.stepflow-node.s4 .step-circle .n { background: var(--accent); color: #fff; }
+@media (max-width: 820px){ .stepflow { flex-direction: column; gap: 16px; } .stepflow-node { padding: 0; } .stepflow-node::before { display: none; } }
+
+/* ---------- Driver cards ---------- */
+.driver { background: #fff; border: 1px solid var(--grey-200); border-radius: 8px; padding: 20px; box-shadow: var(--shadow-sm); border-top: 4px solid var(--blue); }
+.driver-h { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.driver-ico { width: 40px; height: 40px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; flex: none; background: rgba(16,58,107,0.08); }
+.driver-name { font-size: 15px; font-weight: 700; color: var(--navy); }
+.driver-sub { font-size: 11px; color: var(--grey-600); }
+.driver-body { font-size: 12.5px; color: var(--grey-700); line-height: 1.6; }
+.driver-metric { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--grey-200); font-size: 12px; }
+.driver-metric b { color: var(--navy); font-size: 15px; }
+
+/* ---------- Simulator ---------- */
+.sim-wrap { display: grid; grid-template-columns: 320px 1fr; gap: 22px; margin-top: 18px; }
+@media (max-width: 1000px){ .sim-wrap { grid-template-columns: 1fr; } }
+.sim-controls { background: #FFFFFF; border: 1px solid var(--line); border-top: 3px solid var(--blue); border-radius: 10px; padding: 22px; color: var(--ink); box-shadow: var(--shadow-md); align-self: start; position: sticky; top: 150px; }
+.sim-controls h3 { font-size: 14px; font-weight: 700; margin-bottom: 4px; color: var(--ink); }
+.sim-controls .sub { font-size: 11px; color: var(--grey-600); margin-bottom: 18px; }
+.ctrl { margin-bottom: 18px; }
+.ctrl-label { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; margin-bottom: 6px; }
+.ctrl-label .name { color: var(--ink-body); font-weight: 600; }
+.ctrl-label .val { color: var(--blue); font-weight: 700; font-variant-numeric: tabular-nums; background: rgba(16,58,107,0.06); padding: 1px 7px; border-radius: 20px; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 5px; border-radius: 4px; background: var(--grey-200); outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 17px; height: 17px; border-radius: 50%; background: var(--blue); cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(11,35,64,0.25); }
+input[type=range]::-moz-range-thumb { width: 15px; height: 15px; border-radius: 50%; background: var(--blue); cursor: pointer; border: 2px solid #fff; }
+.ctrl-hint { font-size: 10px; color: var(--grey-500); margin-top: 4px; line-height: 1.4; }
+.sim-reset { width: 100%; margin-top: 6px; background: var(--grey-100); border: 1px solid var(--line); color: var(--ink-body); padding: 9px; border-radius: 6px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+.sim-reset:hover { background: var(--grey-200); }
+.sim-scenario-btns { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.scn-btn { flex: 1 1 auto; background: var(--grey-100); border: 1px solid var(--line); color: var(--ink-body); padding: 7px 6px; border-radius: 6px; font-family: inherit; font-size: 10.5px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.scn-btn:hover { border-color: var(--blue); color: var(--blue); }
+.scn-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+.sim-out { display: flex; flex-direction: column; gap: 18px; }
+.sim-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 700px){ .sim-kpis { grid-template-columns: 1fr 1fr; } }
+.kpi { background: #fff; border: 1px solid var(--grey-200); border-radius: 8px; padding: 14px; text-align: left; box-shadow: var(--shadow-sm); }
+.kpi-lbl { font-size: 10.5px; color: var(--grey-600); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+.kpi-val { font-size: 23px; font-weight: 700; color: var(--navy); margin-top: 4px; letter-spacing: -0.5px; }
+.kpi-val .u { font-size: 12px; font-weight: 600; color: var(--grey-600); }
+.kpi-delta { font-size: 11px; font-weight: 700; margin-top: 3px; }
+.kpi-delta.neg { color: var(--red); }
+.kpi-delta.pos { color: var(--green); }
+.chart-card { background: #fff; border: 1px solid var(--grey-200); border-radius: 8px; padding: 18px; box-shadow: var(--shadow-sm); }
+.chart-card h4 { font-size: 13.5px; font-weight: 700; color: var(--navy); margin-bottom: 3px; }
+.chart-card .ch-sub { font-size: 11px; color: var(--grey-600); margin-bottom: 12px; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 11px; color: var(--grey-700); margin-top: 10px; }
+.legend .lg { display: inline-flex; align-items: center; gap: 6px; }
+.legend .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+/* ---------- Roadmap ---------- */
+.road { position: relative; margin: 20px 0 8px; padding-left: 4px; }
+.road-item { display: grid; grid-template-columns: 130px 1fr; gap: 18px; padding: 16px 0; border-bottom: 1px solid var(--grey-200); }
+.road-item:last-child { border-bottom: none; }
+.road-phase { font-size: 12px; font-weight: 700; color: #fff; background: var(--blue); border-radius: 6px; padding: 6px 10px; text-align: center; align-self: start; }
+.road-phase.p2 { background: var(--blue-mid); }
+.road-phase.p3 { background: var(--accent); }
+.road-phase.p4 { background: var(--navy); }
+.road-when { display: block; font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.8); margin-top: 3px; }
+.road-h { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+.road-b { font-size: 12.5px; color: var(--grey-700); line-height: 1.55; }
+
+/* ---------- misc ---------- */
+.arch-layer { background: #fff; border: 1px solid var(--grey-200); border-left: 5px solid var(--blue); border-radius: 6px; padding: 16px 18px; margin-bottom: 12px; box-shadow: var(--shadow-sm); }
+.arch-layer .al-h { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
+.arch-layer .al-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--blue); background: rgba(16,58,107,0.08); padding: 3px 8px; border-radius: 4px; }
+.arch-layer .al-b { font-size: 12.5px; color: var(--grey-700); line-height: 1.55; }
+.arch-layer.l2 { border-left-color: var(--accent-2); }
+.arch-layer.l2 .al-tag { color: #007399; background: rgba(0,169,224,0.12); }
+.arch-layer.l3 { border-left-color: var(--accent); }
+.arch-layer.l3 .al-tag { color: var(--accent); background: rgba(0,155,119,0.10); }
+.arch-layer.l4 { border-left-color: var(--gold); }
+.arch-layer.l4 .al-tag { color: #8E6500; background: rgba(184,134,11,0.12); }
+
+.footer { background: #FFFFFF; color: var(--grey-600); padding: 26px 40px; font-size: 11.5px; line-height: 1.6; margin-top: 40px; border-top: 1px solid var(--line); }
+.footer-inner { max-width: 1320px; margin: 0 auto; }
+.footer strong { color: var(--ink); }
+.footer a { color: var(--blue); text-decoration: none; font-weight: 600; }
+.footer a:hover { text-decoration: underline; }
+
+.bignum { font-variant-numeric: tabular-nums; }
+
+/* ---------- micro-interazioni executive ---------- */
+.stat, .card, .driver, .kpi, .chart-card, .arch-layer { transition: box-shadow 0.22s ease, transform 0.22s ease; }
+.stat:hover, .card:hover, .driver:hover, .kpi:hover, .chart-card:hover, .arch-layer:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.tab-btn { letter-spacing: 0.1px; }
+::selection { background: rgba(16,58,107,0.15); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="brand-left">
+      <img class="brand-emblem" src="data:image/png;base64,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" alt="Emblema della Repubblica Italiana">
+      <div class="brand-min-name">Ministero dell'Istruzione<br>e del Merito</div>
+    </div>
+    <div class="brand-title"><strong>Digital Twin</strong> degli Organici &mdash; Pianificazione del fabbisogno</div>
+    <div class="brand-meta">
+      Per: <strong>Dott. D'Amico</strong><br>
+      Direzione generale per l'innovazione digitale,<br>la semplificazione e la statistica<br>
+      <span class="v">Concept esecutivo &middot; v1.0</span>
+    </div>
+  </div>
+</div>
+
+<div class="topnav">
+  <div class="topnav-inner">
+    <button class="tab-btn active" data-tab="m1"><span class="tab-num">1</span>Sintesi esecutiva</button>
+    <button class="tab-btn" data-tab="m2"><span class="tab-num">2</span>Le leve del fabbisogno</button>
+    <button class="tab-btn" data-tab="m3"><span class="tab-num">3</span>Banche dati aperte</button>
+    <button class="tab-btn" data-tab="m4"><span class="tab-num">4</span>Architettura</button>
+    <button class="tab-btn" data-tab="m5"><span class="tab-num">5</span>Simulatore organici</button>
+    <button class="tab-btn" data-tab="m6"><span class="tab-num">6</span>Ottimizzazione &amp; allocazione</button>
+    <button class="tab-btn" data-tab="m7"><span class="tab-num">7</span>Governance &amp; roadmap</button>
+  </div>
+  <div class="topnav-progress"><div class="topnav-progress-fill" id="topnav-progress-fill"></div></div>
+</div>
+
+<div class="main">
+<!-- =================== MODULO 1 =================== -->
+<div class="module active" id="m1">
+  <div class="hero">
+    <div class="hero-tag">Concept esecutivo &middot; uso interno DG</div>
+    <div class="hero-title">Un <strong>Digital Twin della rete scolastica</strong> per pianificare gli organici prima che il fabbisogno diventi emergenza.</div>
+    <div class="hero-sub">
+      Il Digital Twin replica in ambiente controllato l'intero sistema scuola &mdash; studenti, classi, docenti e personale ATA, plesso per plesso &mdash; e ne proietta l'evoluzione a 10 anni in funzione di <strong>iscrizioni, pensionamenti, mobilit&agrave; e nuovi indirizzi di studio</strong>. Trasforma la programmazione annuale dell'organico da esercizio reattivo a decisione anticipata, misurabile e ottimizzata per territorio.
+    </div>
+    <div class="hero-stats">
+      <div><div class="hero-stat-num bignum">7,07<span class="u"> mln</span></div><div class="hero-stat-lbl">Studenti scuola statale (2024/25)</div></div>
+      <div><div class="hero-stat-num bignum">889.836</div><div class="hero-stat-lbl">Posti docenti (comuni + sostegno)</div></div>
+      <div><div class="hero-stat-num bignum">196.495</div><div class="hero-stat-lbl">Posti personale ATA</div></div>
+      <div><div class="hero-stat-num bignum">&minus;130k</div><div class="hero-stat-lbl">Cattedre a rischio entro il 2035</div></div>
+    </div>
+  </div>
+
+  <div class="section-title">La sfida: una transizione demografica che ridisegna l'organico</div>
+  <div class="section-intro">
+    La popolazione scolastica &egrave; in contrazione strutturale. Le stime condivise con il MEF indicano <strong>&minus;134.000 studenti gi&agrave; nel 2025/26</strong> e una discesa sotto i 6 milioni entro il prossimo decennio, con un potenziale <strong>&minus;1,5 milioni di alunni e fino a 130.000 cattedre in meno al 2035</strong>. La prima riduzione &mdash; &minus;5.667 posti docente &mdash; &egrave; gi&agrave; iscritta in legge di bilancio. Non &egrave; un fenomeno uniforme: colpisce prima e pi&ugrave; a fondo il Mezzogiorno e le aree interne, mentre crescono i posti di sostegno e le esigenze di italiano L2. Governare questa transizione richiede uno strumento previsivo, non solo consuntivo.
+  </div>
+
+  <div class="grid-4" style="margin-bottom: 8px;">
+    <div class="stat red"><div class="stat-value bignum">&minus;134k</div><div class="stat-label">Studenti in meno 2025/26</div><div class="stat-detail">Da 6,9 a ~6,8 mln (infanzia&ndash;secondaria)</div></div>
+    <div class="stat"><div class="stat-value bignum">331.124</div><div class="stat-label">Alunni con disabilit&agrave;</div><div class="stat-detail">Fabbisogno sostegno in crescita costante</div></div>
+    <div class="stat accent"><div class="stat-value bignum">7.461</div><div class="stat-label">Istituzioni scolastiche</div><div class="stat-detail">Post-dimensionamento D.I. 127/2023</div></div>
+    <div class="stat gold"><div class="stat-value bignum">~2,8<span class="u">%</span></div><div class="stat-label">Turnover docenti/anno</div><div class="stat-detail">Ondata pensionamenti da gestire</div></div>
+  </div>
+
+  <div class="section-title">Come funziona, in quattro passi</div>
+  <div class="stepflow">
+    <div class="stepflow-node s1">
+      <div class="step-circle"><span class="n">1</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M7 6h10M6.6 7.6 10.6 16M17.4 7.6 13.4 16"/></svg></div>
+      <div class="step-title">Rappresenta</div>
+      <div class="step-cap">Ricostruisce la rete scolastica reale dai dati aperti e amministrativi.</div>
+    </div>
+    <div class="stepflow-node s2">
+      <div class="step-circle"><span class="n">2</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M4 15l5-5 4 3 6-8"/><path d="M19 4h-3M19 4v3"/></svg></div>
+      <div class="step-title">Proietta</div>
+      <div class="step-cap">Stima iscrizioni, pensionamenti e mobilit&agrave; a 10 anni.</div>
+    </div>
+    <div class="stepflow-node s3">
+      <div class="step-circle"><span class="n">3</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2.3" fill="#fff"/><circle cx="15" cy="12" r="2.3" fill="#fff"/><circle cx="8" cy="17" r="2.3" fill="#fff"/></svg></div>
+      <div class="step-title">Simula</div>
+      <div class="step-cap">Risponde a scenari &laquo;what-if&raquo; di policy e riforme.</div>
+    </div>
+    <div class="stepflow-node s4">
+      <div class="step-circle"><span class="n">4</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg></div>
+      <div class="step-title">Ottimizza</div>
+      <div class="step-cap">Distribuisce i posti minimizzando esuberi e carenze.</div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top: 24px;">
+    <div class="card">
+      <div class="card-title"><span class="ico">?</span>Le domande di governo a cui risponde</div>
+      <ul>
+        <li>Quanti docenti e ATA serviranno tra 3, 5 e 10 anni, per regione e grado?</li>
+        <li>Dove si formeranno <strong>esuberi</strong> da riassorbire e dove <strong>carenze</strong> da coprire?</li>
+        <li>Quale fabbisogno di <strong>reclutamento</strong> generano i pensionamenti attesi?</li>
+        <li>Che impatto hanno i <strong>nuovi indirizzi</strong> (STEM, filiera tecnologico-professionale 4+2) sulle classi di concorso?</li>
+        <li>Come ripartire i posti per contenere le <strong>reggenze</strong> e tutelare le aree interne?</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ico">&#9733;</span>Il valore per il Ministero</div>
+      <ul>
+        <li><strong>Anticipo:</strong> decidere gli organici con 3&ndash;5 anni di visibilit&agrave;, non a ridosso dell'avvio dell'anno scolastico.</li>
+        <li><strong>Equit&agrave; territoriale:</strong> distribuzione trasparente e difendibile verso Regioni, USR e sindacati.</li>
+        <li><strong>Efficienza:</strong> ridurre supplenze &laquo;a singhiozzo&raquo;, esuberi e cattedre scoperte a settembre.</li>
+        <li><strong>Programmazione del reclutamento:</strong> dimensionare concorsi e percorsi abilitanti sul fabbisogno reale.</li>
+        <li><strong>Accountability:</strong> ogni scelta ricostruibile e auditabile a partire da dati ufficiali.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-accent" style="margin-top: 24px;">
+    <strong>Perch&eacute; ora e perch&eacute; questa DG.</strong> La convergenza tra dati aperti del sistema istruzione (Portale Unico dei Dati della Scuola), previsioni demografiche ISTAT e archivi previdenziali rende oggi possibile ci&ograve; che dieci anni fa era solo teoria. La Direzione generale per l'innovazione digitale, la semplificazione e la statistica &egrave; il naturale titolare di uno strumento che &egrave; insieme statistico, tecnologico e di supporto alla decisione &mdash; al servizio delle direzioni del personale e del sistema educativo.
+  </div>
+</div>
+
+<!-- =================== MODULO 2 =================== -->
+<div class="module" id="m2">
+  <div class="module-header">
+    <div class="module-eyebrow">Modulo 2</div>
+    <div class="module-title"><strong>Le leve del fabbisogno</strong> &mdash; cosa muove l'organico, anno dopo anno</div>
+    <div class="module-subtitle">
+      L'organico non &egrave; una fotografia statica: &egrave; il risultato di sei forze che si combinano. Il Digital Twin le modella una per una e ne calcola l'effetto netto sul numero di posti, per grado e territorio. Comprenderle &egrave; il primo passo per simularle.
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="driver">
+      <div class="driver-h"><div class="driver-ico">&#128106;</div><div><div class="driver-name">1. Iscrizioni &amp; demografia</div><div class="driver-sub">Il motore principale del fabbisogno di posti comuni</div></div></div>
+      <div class="driver-body">Il numero di alunni determina il numero di classi e quindi le cattedre. Le iscrizioni future si stimano dalla <strong>popolazione ISTAT per et&agrave; e regione</strong> (le coorti dei prossimi 6 anni sono gi&agrave; nate) combinata con tassi di scolarizzazione e flussi migratori. La denatalit&agrave; agisce con effetto ritardato ma certo, risalendo di grado in grado.</div>
+      <div class="driver-metric">Effetto atteso: <b>&minus;1,9%/anno</b> di studenti <span class="pill pill-red">pressione al ribasso</span></div>
+    </div>
+
+    <div class="driver" style="border-top-color: var(--gold);">
+      <div class="driver-h"><div class="driver-ico">&#127937;</div><div><div class="driver-name">2. Pensionamenti &amp; uscite</div><div class="driver-sub">Genera il fabbisogno di reclutamento</div></div></div>
+      <div class="driver-body">La struttura per et&agrave; del personale &mdash; docenti tra i pi&ugrave; anziani d'Europa &mdash; e i requisiti previdenziali (<strong>dati INPS</strong>, Quota 103, APE sociale, pensione anticipata) determinano le uscite. Non riducono i posti, ma definiscono <strong>quante assunzioni servono</strong> ogni anno per coprirli, guidando concorsi e abilitazioni.</div>
+      <div class="driver-metric">Effetto atteso: <b>~25.000</b> uscite/anno da coprire <span class="pill pill-gold">turnover</span></div>
+    </div>
+
+    <div class="driver" style="border-top-color: var(--accent-2);">
+      <div class="driver-h"><div class="driver-ico">&#128260;</div><div><div class="driver-name">3. Mobilit&agrave; territoriale &amp; professionale</div><div class="driver-sub">Ridistribuisce, non crea n&eacute; distrugge posti</div></div></div>
+      <div class="driver-body">Trasferimenti tra province e regioni, passaggi di ruolo e assegnazioni provvisorie spostano l'offerta di personale sul territorio. La mobilit&agrave; strutturale <strong>Sud&rarr;Nord</strong> genera cattedre scoperte al Nord e disponibilit&agrave; al Sud, disallineando offerta e domanda su base geografica.</div>
+      <div class="driver-metric">Effetto atteso: saldo <b>Sud&rarr;Nord</b> ~+15.000/anno <span class="pill pill-teal">riallocazione</span></div>
+    </div>
+
+    <div class="driver" style="border-top-color: var(--accent);">
+      <div class="driver-h"><div class="driver-ico">&#128218;</div><div><div class="driver-name">4. Nuovi indirizzi di studio</div><div class="driver-sub">Riqualifica la domanda per classe di concorso</div></div></div>
+      <div class="driver-body">La <strong>filiera tecnologico-professionale 4+2</strong>, il potenziamento STEM, i licei del &laquo;Made in Italy&raquo; e le nuove opzioni spostano gli studenti tra indirizzi. Cambia il <em>mix</em> di competenze richieste: non solo quanti docenti, ma <strong>di quali classi di concorso</strong> &mdash; creando carenze in alcune e esuberi in altre a parit&agrave; di alunni.</div>
+      <div class="driver-metric">Effetto atteso: spostamento <b>mix cattedre</b> <span class="pill pill-green">riconversione</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top: 20px;">
+    <div class="driver" style="border-top-color: var(--purple);">
+      <div class="driver-h"><div class="driver-ico">&#9855;</div><div><div class="driver-name">5. Sostegno &amp; inclusione</div><div class="driver-sub">Componente in controtendenza rispetto alla demografia</div></div></div>
+      <div class="driver-body">Con <strong>331.124 alunni con disabilit&agrave;</strong> e una quota in crescita (oggi ~4,7% degli studenti), i posti di sostegno &mdash; 205.253, di cui 79.083 in deroga &mdash; aumentano anche mentre calano gli alunni totali. &Egrave; una leva che <strong>attenua</strong> il calo complessivo dell'organico e va modellata a parte.</div>
+      <div class="driver-metric">Effetto atteso: <b>+</b> posti sostegno <span class="pill pill-orange">controtendenza</span></div>
+    </div>
+    <div class="driver" style="border-top-color: var(--blue-mid);">
+      <div class="driver-h"><div class="driver-ico">&#127760;</div><div><div class="driver-name">6. Alunni stranieri &amp; italiano L2</div><div class="driver-sub">Nuova leva normativa recente</div></div></div>
+      <div class="driver-body">Le classi con oltre il 20% di alunni stranieri neo-iscritti attivano posti dedicati di italiano L2 (classe di concorso A-23): <strong>937 cattedre</strong> gi&agrave; previste. Un fabbisogno concentrato territorialmente, che il Twin geolocalizza a partire dall'anagrafe studenti.</div>
+      <div class="driver-metric">Effetto atteso: <b>+937</b> cattedre A-23 (avvio) <span class="pill pill-teal">mirato</span></div>
+    </div>
+  </div>
+
+  <div class="section-title">Come le leve si combinano nell'equazione dell'organico</div>
+  <div class="callout">
+    In forma sintetica, per ogni territorio <em>t</em> e anno <em>y</em>: &nbsp;
+    <code>Posti(t,y) = Comuni(iscrizioni, alunni/classe) + Sostegno(disabilit&agrave;) + Potenziamento + L2</code>. &nbsp;
+    Il <strong>fabbisogno di reclutamento</strong> &egrave; invece <code>Uscite(pensionamenti) + &Delta;Posti netti &minus; rientri da mobilit&agrave;</code>. Il Digital Twin calcola entrambe le grandezze per ~7.500 istituzioni e le aggrega per provincia, regione e classe di concorso.
+  </div>
+
+  <div class="table-wrap">
+    <table class="dt">
+      <thead>
+        <tr><th>Leva</th><th>Grandezza guida</th><th>Fonte dati primaria</th><th>Effetto su posti comuni</th><th>Effetto su reclutamento</th><th>Orizzonte</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Iscrizioni / demografia</td><td>Popolazione per et&agrave; e regione</td><td>ISTAT + Anagrafe studenti</td><td><span class="pill pill-red">Forte &darr;</span></td><td><span class="pill pill-grey">Indiretto</span></td><td>1&ndash;13 anni (coorti note)</td></tr>
+        <tr><td>Pensionamenti</td><td>Et&agrave; e anzianit&agrave; personale</td><td>INPS + NoiPA</td><td><span class="pill pill-grey">Nullo</span></td><td><span class="pill pill-gold">Forte &uarr;</span></td><td>1&ndash;10 anni</td></tr>
+        <tr><td>Mobilit&agrave;</td><td>Domande di trasferimento</td><td>SIDI &ndash; procedure mobilit&agrave;</td><td><span class="pill pill-grey">Nullo (netto)</span></td><td><span class="pill pill-teal">Riallocazione</span></td><td>Annuale</td></tr>
+        <tr><td>Nuovi indirizzi</td><td>Iscritti per indirizzo</td><td>Anagrafe studenti + offerta formativa</td><td><span class="pill pill-teal">Mix</span></td><td><span class="pill pill-green">Riconversione CdC</span></td><td>2&ndash;6 anni</td></tr>
+        <tr><td>Sostegno</td><td>Alunni con disabilit&agrave;</td><td>Portale Unico Dati Scuola</td><td><span class="pill pill-orange">&uarr;</span></td><td><span class="pill pill-orange">&uarr;</span></td><td>1&ndash;10 anni</td></tr>
+        <tr><td>Italiano L2</td><td>% stranieri neo-iscritti</td><td>Anagrafe studenti</td><td><span class="pill pill-teal">Locale &uarr;</span></td><td><span class="pill pill-teal">Mirato</span></td><td>Annuale</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="t-src">Effetti indicativi a fini di concept; i coefficienti reali si stimano sui dati ufficiali al momento dell'estrazione.</div>
+</div>
+
+<!-- =================== MODULO 3 =================== -->
+<div class="module" id="m3">
+  <div class="module-header">
+    <div class="module-eyebrow">Modulo 3</div>
+    <div class="module-title"><strong>Banche dati aperte</strong> &mdash; le fondamenta informative del Digital Twin</div>
+    <div class="module-subtitle">
+      Il Digital Twin si alimenta prima di tutto da <strong>dati gi&agrave; disponibili e aperti</strong>, integrati con gli archivi amministrativi interni al Ministero. Nessun nuovo onere di raccolta: si valorizza il patrimonio esistente in un unico <em>feature store</em> riconciliato per scuola, territorio e tempo.
+    </div>
+  </div>
+
+  <div class="section-title">Fonti aperte primarie</div>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title"><span class="ico">&#127891;</span>Portale Unico Dati Scuola</div>
+      <div style="font-size:12px;color:var(--grey-700);line-height:1.6;">
+        <strong>dati.istruzione.it</strong> &mdash; il cuore dei dati open del MIM. Licenza <span class="pill pill-green">IODL 2.0</span>, formati CSV / JSON / RDF / XML ed <strong>endpoint SPARQL</strong>.
+        <ul style="margin-top:8px;">
+          <li>Anagrafe scuole e sedi</li>
+          <li>Studenti per grado, anno di corso, indirizzo</li>
+          <li>Docenti titolari e supplenti per tipo posto, genere, fascia d'et&agrave;</li>
+          <li>ATA titolari e supplenti per profilo</li>
+          <li>Edilizia scolastica e Sistema Nazionale di Valutazione</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ico">&#128202;</span>ISTAT</div>
+      <div style="font-size:12px;color:var(--grey-700);line-height:1.6;">
+        Il fondamento delle <strong>proiezioni di iscrizioni</strong>.
+        <ul style="margin-top:8px;">
+          <li>Previsioni della popolazione per et&agrave;, sesso e regione</li>
+          <li>Natalit&agrave; e serie storiche delle nascite</li>
+          <li>Saldi migratori interni ed esteri</li>
+          <li>Rilevazione sulle forze di lavoro (contesto)</li>
+        </ul>
+        <span class="pill pill-teal" style="margin-top:8px;display:inline-block;">API + SDMX + dati.istat.it</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ico">&#9878;</span>INPS</div>
+      <div style="font-size:12px;color:var(--grey-700);line-height:1.6;">
+        Il motore delle <strong>uscite per pensionamento</strong>.
+        <ul style="margin-top:8px;">
+          <li>Requisiti pensionistici vigenti (Fornero, Quota 103, APE)</li>
+          <li>Osservatorio pensioni e cessazioni comparto scuola</li>
+          <li>Simulazione dei diritti maturati per coorte</li>
+        </ul>
+        <span class="pill pill-teal" style="margin-top:8px;display:inline-block;">Open data INPS + Osservatori statistici</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Fonti aperte di contesto e benchmark</div>
+  <div class="grid-4">
+    <div class="card" style="padding:16px;"><div class="card-title" style="font-size:13px;"><span class="ico">&#127760;</span>Eurostat / OCSE</div><div style="font-size:11.5px;color:var(--grey-700);line-height:1.55;">Rapporto alunni/docente, spesa per studente, benchmark europei (UOE, Education at a Glance).</div></div>
+    <div class="card" style="padding:16px;"><div class="card-title" style="font-size:13px;"><span class="ico">&#128200;</span>INVALSI</div><div style="font-size:11.5px;color:var(--grey-700);line-height:1.55;">Esiti di apprendimento e contesto per pesare qualit&agrave; ed equit&agrave; nella distribuzione.</div></div>
+    <div class="card" style="padding:16px;"><div class="card-title" style="font-size:13px;"><span class="ico">&#127961;</span>ANPR / Min. Interno</div><div style="font-size:11.5px;color:var(--grey-700);line-height:1.55;">Popolazione residente per comune: bacini d'utenza e dimensionamento della rete.</div></div>
+    <div class="card" style="padding:16px;"><div class="card-title" style="font-size:13px;"><span class="ico">&#128279;</span>dati.gov.it</div><div style="font-size:11.5px;color:var(--grey-700);line-height:1.55;">Catalogo nazionale dei dati aperti: punto di scoperta e armonizzazione dei metadati.</div></div>
+  </div>
+
+  <div class="section-title">Archivi amministrativi interni (accesso riservato, in ambiente controllato)</div>
+  <div class="callout">
+    Ai dati aperti si affiancano gli archivi gestionali del Ministero, che portano la <strong>granularit&agrave; individuale</strong> necessaria alle simulazioni fini: <strong>SIDI</strong> (Sistema Informativo dell'Istruzione), <strong>Anagrafe Nazionale Studenti</strong>, procedure di <strong>organico di diritto/fatto</strong>, <strong>mobilit&agrave;</strong> e reclutamento (GaE, GPS, concorsi), e <strong>NoiPA</strong> (MEF) per l'anagrafica retributiva ed et&agrave; del personale. Tutti trattati in forma pseudonimizzata e conforme al GDPR.
+  </div>
+
+  <div class="section-title">Il feature store: un solo aggancio, riuso da tutti i moduli</div>
+  <div class="section-intro">Esempio di record integrato a livello di istituzione scolastica-anno, come lo &laquo;vede&raquo; il modello dopo la riconciliazione delle fonti.</div>
+  <div class="table-wrap">
+    <table class="dt">
+      <thead>
+        <tr><th>Cod. mecc.</th><th>Anno</th><th>Regione</th><th>Grado</th><th class="num">Alunni</th><th class="num">Classi</th><th class="num">Al./classe</th><th class="num">% disab.</th><th class="num">Docenti</th><th class="num">Et&agrave; media doc.</th><th class="num">ATA</th><th>Fonte join</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>RMIC8xxxx</td><td>2024</td><td>Lazio</td><td>Primaria</td><td class="num">612</td><td class="num">30</td><td class="num">20,4</td><td class="num">5,1</td><td class="num">78</td><td class="num">49,2</td><td class="num">19</td><td><span class="pill pill-blue">Scuola+Personale+ISTAT</span></td></tr>
+        <tr><td>NAIS0xxxx</td><td>2024</td><td>Campania</td><td>Sec. II gr.</td><td class="num">1.041</td><td class="num">47</td><td class="num">22,1</td><td class="num">3,8</td><td class="num">132</td><td class="num">51,7</td><td class="num">28</td><td><span class="pill pill-blue">Scuola+Personale+INPS</span></td></tr>
+        <tr><td>TOIC8xxxx</td><td>2024</td><td>Piemonte</td><td>Sec. I gr.</td><td class="num">438</td><td class="num">21</td><td class="num">20,9</td><td class="num">6,4</td><td class="num">56</td><td class="num">48,0</td><td class="num">14</td><td><span class="pill pill-blue">Scuola+Personale+ANPR</span></td></tr>
+        <tr><td>CSIC8xxxx</td><td>2024</td><td>Calabria</td><td>Primaria</td><td class="num">203</td><td class="num">14</td><td class="num">14,5</td><td class="num">7,2</td><td class="num">31</td><td class="num">50,3</td><td class="num">9</td><td><span class="pill pill-orange">Area interna</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="t-src">Codici meccanografici e valori a scopo illustrativo. La chiave temporale (anno scolastico) e geografica (comune/provincia/regione) consente l'aggancio automatico di demografia e contesto macro.</div>
+
+  <div class="callout callout-good" style="margin-top:24px;">
+    <strong>Perch&eacute; questa base abilita il Digital Twin.</strong> Con un feature store cos&igrave; strutturato si pu&ograve;: <em>(i)</em> ricostruire la rete scolastica reale; <em>(ii)</em> proiettare le iscrizioni ancorandole alle coorti gi&agrave; nate; <em>(iii)</em> stimare le uscite per pensionamento sui diritti maturati; <em>(iv)</em> simulare politiche e riforme prima di adottarle. Tutto a partire da dati in larga parte gi&agrave; pubblici.
+  </div>
+</div>
+
+<!-- =================== MODULO 4 =================== -->
+<div class="module" id="m4">
+  <div class="module-header">
+    <div class="module-eyebrow">Modulo 4</div>
+    <div class="module-title"><strong>Architettura</strong> &mdash; dai dati alla decisione, in quattro livelli</div>
+    <div class="module-subtitle">
+      Il Digital Twin &egrave; una pila coerente: i dati alimentano i modelli, i modelli generano le proiezioni, le proiezioni diventano scenari e cruscotti per la decisione. Ogni livello &egrave; modulare, versionato e auditabile.
+    </div>
+  </div>
+
+  <div class="arch-layer">
+    <div class="al-h"><span class="al-tag">Livello 1</span>Ingestione &amp; feature store</div>
+    <div class="al-b">Acquisizione automatica da Portale Unico Dati Scuola (SPARQL/API), ISTAT, INPS e archivi interni. Riconciliazione per chiave <strong>scuola &times; territorio &times; anno</strong>, controlli di qualit&agrave; e storicizzazione. Un'unica base dati alimenta tutti i modelli.</div>
+  </div>
+  <div class="arch-layer l2">
+    <div class="al-h"><span class="al-tag">Livello 2</span>Modelli previsivi</div>
+    <div class="al-b">Tre motori specializzati: <strong>proiezione iscrizioni</strong> (metodo delle coorti + demografia ISTAT), <strong>modello delle uscite</strong> (pensionamenti su diritti maturati e ipotesi di adesione), <strong>flussi di mobilit&agrave;</strong> (matrici di transizione territoriale). Combinano metodi statistici classici e machine learning, con bande di incertezza.</div>
+  </div>
+  <div class="arch-layer l3">
+    <div class="al-h"><span class="al-tag">Livello 3</span>Motore di simulazione &amp; ottimizzazione</div>
+    <div class="al-b">Il cuore &laquo;what-if&raquo;: applica leve di policy agli scenari base e calcola il fabbisogno di posti e reclutamento. Un modulo di <strong>ottimizzazione</strong> propone la distribuzione dei posti che minimizza esuberi e carenze rispettando i vincoli (dimensionamento, tetti di spesa, tutela aree interne).</div>
+  </div>
+  <div class="arch-layer l4">
+    <div class="al-h"><span class="al-tag">Livello 4</span>Cruscotto decisionale</div>
+    <div class="al-b">Interfaccia executive per la DG e le direzioni del personale: KPI, mappe regionali, scenari a confronto, export per note e decreti. Il <strong>Modulo 5</strong> di questo documento ne &egrave; un'anteprima funzionante.</div>
+  </div>
+
+  <div class="section-title">Come funziona la proiezione delle iscrizioni: il metodo delle coorti</div>
+  <div class="callout">
+    Gli alunni che frequenteranno la primaria nel 2030 <strong>sono gi&agrave; nati</strong>. Il modello fa avanzare ogni coorte di et&agrave; di anno in anno (&laquo;survival ratio&raquo;), applicando tassi di passaggio tra gradi, ripetenze e saldi migratori. &Egrave; per questo che la previsione a breve-medio termine &egrave; robusta: non estrapola un trend, segue popolazioni reali osservate.
+  </div>
+
+  <div class="grid-3">
+    <div class="card"><div class="card-title"><span class="ico">A</span>Motore iscrizioni</div><ul><li>Input: nascite, popolazione 0&ndash;18 ISTAT, tassi scolarizzazione</li><li>Metodo: coorti + catene di transizione tra gradi</li><li>Output: alunni per grado, indirizzo, territorio, 2025&ndash;2035</li></ul></div>
+    <div class="card"><div class="card-title"><span class="ico">B</span>Motore uscite</div><ul><li>Input: et&agrave;/anzianit&agrave; personale (NoiPA), regole INPS</li><li>Metodo: maturazione requisiti + tassi di adesione</li><li>Output: cessazioni attese per profilo e territorio</li></ul></div>
+    <div class="card"><div class="card-title"><span class="ico">C</span>Motore allocazione</div><ul><li>Input: posti necessari vs disponibili, vincoli</li><li>Metodo: ottimizzazione con vincoli (programmazione)</li><li>Output: distribuzione posti che minimizza il disallineamento</li></ul></div>
+  </div>
+
+  <div class="callout callout-warn" style="margin-top:24px;">
+    <strong>Onest&agrave; sull'incertezza.</strong> La demografia rende le iscrizioni molto prevedibili a 6 anni; oltre, e per le variabili comportamentali (adesione ai pensionamenti, scelte di indirizzo, mobilit&agrave;), il modello produce <strong>bande</strong>, non punti. Il cruscotto mostra sempre lo scenario centrale con l'intervallo, cos&igrave; la decisione &egrave; consapevole del margine.
+  </div>
+</div>
+
+<!-- =================== MODULO 5 =================== -->
+<div class="module" id="m5">
+  <div class="module-header">
+    <div class="module-eyebrow">Modulo 5</div>
+    <div class="module-title"><strong>Simulatore degli organici</strong> &mdash; muovi le leve, leggi il futuro</div>
+    <div class="module-subtitle">
+      Anteprima funzionante del cruscotto. Parte dai dati reali 2024/25 (7,07 mln studenti, 889.836 posti docente, 196.495 ATA) e proietta al 2035 in funzione delle leve del Modulo 2. Modifica gli assunti a sinistra: KPI e grafici si aggiornano in tempo reale.
+    </div>
+  </div>
+
+  <div class="sim-wrap">
+    <div class="sim-controls">
+      <h3>Assunti dello scenario</h3>
+      <div class="sub">Base: anno scolastico 2024/2025</div>
+
+      <div class="sim-scenario-btns">
+        <button class="scn-btn active" data-scn="base">Tendenziale</button>
+        <button class="scn-btn" data-scn="riforma">Riforma 4+2</button>
+        <button class="scn-btn" data-scn="crisi">Denatalit&agrave; acuta</button>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-label"><span class="name">Trend iscrizioni /anno</span><span class="val" id="v-natal">&minus;1,9%</span></div>
+        <input type="range" id="s-natal" min="-3.5" max="0.5" step="0.1" value="-1.9">
+        <div class="ctrl-hint">Variazione annua della popolazione scolastica (guidata da natalit&agrave; e migrazioni).</div>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-label"><span class="name">Alunni per classe</span><span class="val" id="v-aic">19,5</span></div>
+        <input type="range" id="s-aic" min="17" max="23" step="0.1" value="19.5">
+        <div class="ctrl-hint">Soglia media di formazione classi (dimensionamento). Pi&ugrave; alta &rarr; meno classi.</div>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-label"><span class="name">Quota alunni sostegno</span><span class="val" id="v-sost">4,7%</span></div>
+        <input type="range" id="s-sost" min="4" max="8" step="0.1" value="4.7">
+        <div class="ctrl-hint">Percentuale di alunni con disabilit&agrave; certificata (in crescita storica).</div>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-label"><span class="name">Turnover pensionamenti /anno</span><span class="val" id="v-pens">2,8%</span></div>
+        <input type="range" id="s-pens" min="1.5" max="5" step="0.1" value="2.8">
+        <div class="ctrl-hint">Quota di docenti che esce ogni anno: guida il fabbisogno di reclutamento.</div>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-label"><span class="name">Spinta nuovi indirizzi (STEM/4+2)</span><span class="val" id="v-rif">0%</span></div>
+        <input type="range" id="s-rif" min="0" max="30" step="1" value="0">
+        <div class="ctrl-hint">Quota di cattedre del 2&deg; ciclo da riconvertire verso indirizzi tecnico-STEM.</div>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-label"><span class="name">Mobilit&agrave; netta Sud&rarr;Nord</span><span class="val" id="v-mob">15k</span></div>
+        <input type="range" id="s-mob" min="0" max="30" step="1" value="15">
+        <div class="ctrl-hint">Migliaia di docenti/anno che chiedono trasferimento verso Nord/Centro.</div>
+      </div>
+
+      <button class="sim-reset" id="sim-reset">&#8635; Ripristina tendenziale</button>
+    </div>
+
+    <div class="sim-out">
+      <div class="sim-kpis">
+        <div class="kpi"><div class="kpi-lbl">Studenti al 2035</div><div class="kpi-val bignum" id="k-stud">&ndash;</div><div class="kpi-delta neg" id="k-stud-d">&ndash;</div></div>
+        <div class="kpi"><div class="kpi-lbl">Posti docente 2035</div><div class="kpi-val bignum" id="k-doc">&ndash;</div><div class="kpi-delta neg" id="k-doc-d">&ndash;</div></div>
+        <div class="kpi"><div class="kpi-lbl">Posti ATA 2035</div><div class="kpi-val bignum" id="k-ata">&ndash;</div><div class="kpi-delta neg" id="k-ata-d">&ndash;</div></div>
+        <div class="kpi"><div class="kpi-lbl">Reclutam. cumulato '25&ndash;'35</div><div class="kpi-val bignum" id="k-rec">&ndash;</div><div class="kpi-delta pos" id="k-rec-d">assunzioni</div></div>
+      </div>
+
+      <div class="chart-card">
+        <h4>Proiezione della popolazione scolastica</h4>
+        <div class="ch-sub">Studenti scuola statale, milioni &mdash; scenario selezionato vs base 2024/25</div>
+        <div id="ch-students"></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="chart-card">
+          <h4>Fabbisogno di posti docente</h4>
+          <div class="ch-sub">Comuni + sostegno, migliaia di posti</div>
+          <div id="ch-teachers"></div>
+          <div class="legend">
+            <span class="lg"><span class="sw" style="background:#103A6B;"></span>Posti comuni</span>
+            <span class="lg"><span class="sw" style="background:#009B77;"></span>Posti sostegno</span>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h4>Fabbisogno annuo di reclutamento</h4>
+          <div class="ch-sub">Nuove assunzioni necessarie per anno (pensionamenti &plusmn; &Delta; posti)</div>
+          <div id="ch-recruit"></div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h4>Saldo posti per macro-area al 2035</h4>
+        <div class="ch-sub">Differenza tra posti necessari e organico attuale &mdash; <span style="color:var(--red);">negativo = esuberi da riassorbire</span>, <span style="color:var(--green);">positivo = carenze da coprire</span></div>
+        <div id="ch-regions"></div>
+      </div>
+
+      <div class="callout" id="sim-narrative" style="margin-bottom:0;"></div>
+    </div>
+  </div>
+
+  <div class="t-src" style="margin-top:16px;">Modello dimostrativo a scopo di concept: i coefficienti replicano ordini di grandezza reali ma non sostituiscono le procedure ufficiali di organico. In produzione i motori sono calibrati sui microdati e restituiscono bande di incertezza.</div>
+</div>
+
+<!-- =================== MODULO 6 =================== -->
+<div class="module" id="m6">
+  <div class="module-header">
+    <div class="module-eyebrow">Modulo 6</div>
+    <div class="module-title"><strong>Ottimizzazione &amp; allocazione</strong> &mdash; dal fabbisogno alla distribuzione ottima</div>
+    <div class="module-subtitle">
+      Sapere <em>quanti</em> posti servono non basta: la sfida &egrave; distribuirli <em>dove</em> servono, contenendo esuberi e cattedre scoperte. Il Twin traduce la proiezione in una proposta di allocazione che rispetta i vincoli di sistema ed &egrave; trasparente verso tutti gli attori.
+    </div>
+  </div>
+
+  <div class="section-title">Il disallineamento che l'ottimizzazione risolve</div>
+  <div class="grid-3">
+    <div class="stat red"><div class="stat-value">Esuberi</div><div class="stat-label">Dove i posti eccedono gli alunni</div><div class="stat-detail">Tipici del Mezzogiorno e delle aree a forte calo demografico: personale in soprannumero da riassorbire o riconvertire.</div></div>
+    <div class="stat accent"><div class="stat-value">Carenze</div><div class="stat-label">Dove mancano docenti sulle cattedre</div><div class="stat-detail">Tipiche del Nord: cattedre scoperte, supplenze prolungate, discontinuit&agrave; didattica.</div></div>
+    <div class="stat gold"><div class="stat-value">Mismatch</div><div class="stat-label">Classe di concorso sbagliata</div><div class="stat-detail">Personale disponibile ma su materie non richieste dai nuovi indirizzi: serve riconversione.</div></div>
+  </div>
+
+  <div class="section-title">La funzione obiettivo, in linguaggio non tecnico</div>
+  <div class="callout">
+    L'ottimizzatore cerca la distribuzione dei posti che <strong>minimizza la somma di esuberi e carenze</strong> su tutti i territori e le classi di concorso, <em>rispettando</em>: il tetto complessivo di posti (legge di bilancio), i vincoli di dimensionamento (D.I. 127/2023), la tutela delle scuole di area interna e di montagna, e la continuit&agrave; didattica. In pratica: massimo servizio erogato per ogni posto disponibile.
+  </div>
+
+  <div class="section-title">Esempio: proposta di riallocazione a parit&agrave; di posti totali</div>
+  <div class="table-wrap">
+    <table class="dt">
+      <thead>
+        <tr><th>Macro-area</th><th class="num">Posti attuali</th><th class="num">Fabbisogno 2030</th><th class="num">Saldo</th><th>Situazione</th><th>Leva suggerita dal Twin</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Nord-Ovest</td><td class="num">228.400</td><td class="num">231.900</td><td class="num" style="color:var(--green);font-weight:700;">+3.500</td><td><span class="pill pill-green">Carenza</span></td><td>Priorit&agrave; assunzioni, incentivi alla stabilit&agrave;</td></tr>
+        <tr><td>Nord-Est</td><td class="num">158.700</td><td class="num">159.400</td><td class="num" style="color:var(--green);font-weight:700;">+700</td><td><span class="pill pill-green">Lieve carenza</span></td><td>Copertura mirata cattedre STEM</td></tr>
+        <tr><td>Centro</td><td class="num">172.300</td><td class="num">170.100</td><td class="num" style="color:var(--red);font-weight:700;">&minus;2.200</td><td><span class="pill pill-orange">Lieve esubero</span></td><td>Blocco parziale turnover, riconversione</td></tr>
+        <tr><td>Sud</td><td class="num">201.600</td><td class="num">193.800</td><td class="num" style="color:var(--red);font-weight:700;">&minus;7.800</td><td><span class="pill pill-red">Esubero</span></td><td>Riassorbimento graduale, mobilit&agrave; volontaria verso Nord</td></tr>
+        <tr><td>Isole</td><td class="num">128.800</td><td class="num">122.600</td><td class="num" style="color:var(--red);font-weight:700;">&minus;6.200</td><td><span class="pill pill-red">Esubero</span></td><td>Tutela aree interne, riconversione sostegno</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="t-src">Valori illustrativi coerenti con l'ordine di grandezza nazionale; la ripartizione reale si calcola per provincia e classe di concorso.</div>
+
+  <div class="grid-2" style="margin-top:24px;">
+    <div class="card">
+      <div class="card-title"><span class="ico">&#128736;</span>Leve di intervento modellabili</div>
+      <ul>
+        <li><strong>Reclutamento mirato:</strong> dimensionare concorsi per territorio e classe di concorso in carenza.</li>
+        <li><strong>Mobilit&agrave; incentivata:</strong> favorire i trasferimenti dalle aree in esubero a quelle in carenza.</li>
+        <li><strong>Riconversione professionale:</strong> percorsi per passare a classi di concorso richieste dai nuovi indirizzi o al sostegno.</li>
+        <li><strong>Dimensionamento fine:</strong> accorpamenti e reti di scuole nelle aree a forte calo, salvaguardando i presidi essenziali.</li>
+        <li><strong>Governo delle supplenze:</strong> ridurre il ricorso al precariato dove il fabbisogno &egrave; strutturale.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ico">&#9878;</span>Vincoli e tutele rispettati</div>
+      <ul>
+        <li>Tetto complessivo dei posti (legge di bilancio, intesa con MEF).</li>
+        <li>Numerosit&agrave; minime e massime delle classi (norme dimensionamento).</li>
+        <li>Salvaguardia scuole di piccole isole, montagna e aree interne.</li>
+        <li>Continuit&agrave; didattica e diritti del personale di ruolo.</li>
+        <li>Sostenibilit&agrave; per USR e Enti locali (edilizia, trasporti).</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- =================== MODULO 7 =================== -->
+<div class="module" id="m7">
+  <div class="module-header">
+    <div class="module-eyebrow">Modulo 7</div>
+    <div class="module-title"><strong>Governance &amp; roadmap</strong> &mdash; come lo realizziamo, con quali garanzie</div>
+    <div class="module-subtitle">
+      Un percorso incrementale che produce valore fin dalla prima fase, poggiato sul patrimonio dati esistente e conforme per costruzione a privacy e trasparenza amministrativa.
+    </div>
+  </div>
+
+  <div class="section-title">Roadmap di implementazione</div>
+  <div class="road">
+    <div class="road-item">
+      <div class="road-phase p1">Fase 1<span class="road-when">0&ndash;3 mesi</span></div>
+      <div><div class="road-h">Fondazioni dati &amp; proof of value</div><div class="road-b">Integrazione delle fonti aperte (Portale Dati Scuola, ISTAT, INPS) in un feature store; ricostruzione della rete scolastica attuale; primo motore di proiezione iscrizioni nazionale. Deliverable: cruscotto demografico con proiezione studenti a 10 anni.</div></div>
+    </div>
+    <div class="road-item">
+      <div class="road-phase p2">Fase 2<span class="road-when">3&ndash;9 mesi</span></div>
+      <div><div class="road-h">Motori del fabbisogno</div><div class="road-b">Aggancio degli archivi interni (SIDI, NoiPA, organico di fatto) in ambiente controllato; modelli di pensionamento e mobilit&agrave;; calcolo del fabbisogno docenti/ATA per regione e grado. Deliverable: simulatore what-if operativo (evoluzione del Modulo 5).</div></div>
+    </div>
+    <div class="road-item">
+      <div class="road-phase p3">Fase 3<span class="road-when">9&ndash;15 mesi</span></div>
+      <div><div class="road-h">Ottimizzazione &amp; classi di concorso</div><div class="road-b">Modulo di allocazione ottima per provincia e classe di concorso; integrazione dei nuovi indirizzi (filiera 4+2, STEM); scenari di riconversione e reclutamento. Deliverable: proposta di distribuzione posti a supporto dell'organico annuale.</div></div>
+    </div>
+    <div class="road-item">
+      <div class="road-phase p4">Fase 4<span class="road-when">15&ndash;24 mesi</span></div>
+      <div><div class="road-h">Messa a regime &amp; istituzionalizzazione</div><div class="road-b">Cruscotto in produzione per DG e direzioni del personale; aggiornamento automatico annuale; documentazione, formazione e integrazione nel ciclo di programmazione degli organici. Deliverable: servizio a regime, versionato e auditabile.</div></div>
+    </div>
+  </div>
+
+  <div class="section-title">Governance dei dati &amp; conformit&agrave;</div>
+  <div class="grid-2">
+    <div class="card"><div class="card-title"><span class="ico">&#128274;</span>Privacy &amp; GDPR</div><ul><li>Microdati trattati pseudonimizzati, in ambiente controllato</li><li>Base giuridica: compiti di interesse pubblico del Ministero</li><li>Minimizzazione: solo variabili utili alla pianificazione</li><li>Output aggregati per scuola/territorio, mai individuali</li></ul></div>
+    <div class="card"><div class="card-title"><span class="ico">&#128269;</span>Trasparenza &amp; audit</div><ul><li>Ogni proiezione ricostruibile da fonte e versione dei dati</li><li>Assunti di scenario espliciti e documentati</li><li>Metodologia pubblicabile; codice e modelli versionati</li><li>Riproducibilit&agrave; delle simulazioni nel tempo</li></ul></div>
+  </div>
+
+  <div class="section-title">Benefici attesi &mdash; sintesi executive</div>
+  <div class="grid-4">
+    <div class="stat accent"><div class="stat-value">3&ndash;5 anni</div><div class="stat-label">Orizzonte di anticipo decisionale</div></div>
+    <div class="stat"><div class="stat-value">&darr; Supplenze</div><div class="stat-label">Meno cattedre scoperte a settembre</div></div>
+    <div class="stat gold"><div class="stat-value">Equit&agrave;</div><div class="stat-label">Distribuzione trasparente e difendibile</div></div>
+    <div class="stat"><div class="stat-value">Riuso dati</div><div class="stat-label">Zero nuovo onere di raccolta</div></div>
+  </div>
+
+  <div class="callout callout-accent" style="margin-top:24px;">
+    <strong>In una frase.</strong> Il Digital Twin degli organici mette la DG in condizione di rispondere, con dati ufficiali e in tempo reale, alla domanda che ogni anno determina il funzionamento della scuola italiana: <em>quanti docenti e ATA, di quali competenze, e dove.</em> Anticipando il fabbisogno invece di rincorrerlo.
+  </div>
+</div>
+
+</div>
+
+<div class="footer">
+  <div class="footer-inner">
+    <strong>Digital Twin degli Organici &mdash; Ministero dell'Istruzione e del Merito</strong> &middot; Concept esecutivo v1.0<br>
+    Predisposto per la Direzione generale per l'innovazione digitale, la semplificazione e la statistica (Dott. D'Amico).
+    Dati di riferimento: Organico di Fatto a.s. 2024/2025 (MIM), previsioni ISTAT, open data del <a href="https://dati.istruzione.it" target="_blank" rel="noopener">Portale Unico dei Dati della Scuola</a> (licenza IODL 2.0).
+    Le cifre puntuali nelle simulazioni hanno finalit&agrave; illustrativa e non sostituiscono le procedure ufficiali di determinazione degli organici.
+  </div>
+</div>
+
+<script>
+/* ============ Navigazione a tab ============ */
+(function(){
+  var tabs = document.querySelectorAll('.tab-btn');
+  var modules = document.querySelectorAll('.module');
+  var fill = document.getElementById('topnav-progress-fill');
+  function activate(id){
+    tabs.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===id); });
+    modules.forEach(function(m){ m.classList.toggle('active', m.id===id); });
+    var idx = parseInt(id.replace('m',''),10);
+    if(fill){ fill.style.width = Math.round(idx/7*100) + '%'; }
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  tabs.forEach(function(btn){
+    btn.addEventListener('click', function(){ activate(btn.getAttribute('data-tab')); });
+  });
+  // Sincronizza gli offset delle barre sticky con l'altezza reale dell'header
+  function syncSticky(){
+    var header=document.querySelector('.header');
+    var topnav=document.querySelector('.topnav');
+    if(!header||!topnav) return;
+    var h=header.offsetHeight;
+    topnav.style.top=h+'px';
+    var sc=document.querySelector('.sim-controls');
+    if(sc){ sc.style.top=(h+topnav.offsetHeight+16)+'px'; }
+  }
+  window.addEventListener('load', syncSticky);
+  window.addEventListener('resize', syncSticky);
+  syncSticky();
+})();
+
+/* ============ Motore del simulatore ============ */
+(function(){
+  // --- Base a.s. 2024/25 (dati MIM Organico di Fatto) ---
+  var BASE = {
+    students: 7073587,
+    classes: 362115,
+    common: 684583,      // posti comuni
+    support: 205253,     // posti sostegno
+    ata: 196495,
+    disabShare: 0.0468,  // 331124 / 7073587
+    aic: 19.5,           // alunni per classe (approssimato dai dati)
+    supportPerDisab: 205253/331124,
+    startYear: 2024,
+    endYear: 2035
+  };
+  // macro-aree: quota studenti e trend relativo (Sud/Isole peggiore)
+  var AREAS = [
+    {name:'Nord-Ovest', share:0.255, trendAdj:+0.006, posts:228400},
+    {name:'Nord-Est',   share:0.175, trendAdj:+0.004, posts:158700},
+    {name:'Centro',     share:0.195, trendAdj:+0.001, posts:172300},
+    {name:'Sud',        share:0.225, trendAdj:-0.007, posts:201600},
+    {name:'Isole',      share:0.150, trendAdj:-0.009, posts:128800}
+  ];
+
+  var DEFAULTS = { natal:-1.9, aic:19.5, sost:4.7, pens:2.8, rif:0, mob:15 };
+  var SCENARIOS = {
+    base:    { natal:-1.9, aic:19.5, sost:4.7, pens:2.8, rif:0,  mob:15 },
+    riforma: { natal:-1.6, aic:20.5, sost:5.2, pens:3.2, rif:20, mob:12 },
+    crisi:   { natal:-3.0, aic:19.0, sost:6.0, pens:3.5, rif:5,  mob:22 }
+  };
+
+  var ids = ['natal','aic','sost','pens','rif','mob'];
+  var sliders = {}; ids.forEach(function(k){ sliders[k]=document.getElementById('s-'+k); });
+
+  function params(){
+    return {
+      natal: parseFloat(sliders.natal.value),
+      aic: parseFloat(sliders.aic.value),
+      sost: parseFloat(sliders.sost.value),
+      pens: parseFloat(sliders.pens.value),
+      rif: parseFloat(sliders.rif.value),
+      mob: parseFloat(sliders.mob.value)
+    };
+  }
+
+  function simulate(p){
+    var years=[], students=[], common=[], support=[], ata=[], recruit=[], teachers=[];
+    var g = p.natal/100;
+    var classFactorBase = BASE.common / BASE.classes; // cattedre comuni per classe
+    for(var y=BASE.startYear; y<=BASE.endYear; y++){
+      var t = y - BASE.startYear;
+      var st = BASE.students * Math.pow(1+g, t);
+      var cls = st / p.aic;
+      var com = cls * classFactorBase;
+      var disab = st * (p.sost/100);
+      var sup = disab * BASE.supportPerDisab;
+      // ATA: 55% fisso (istituzioni) + 45% variabile con le classi
+      var at = BASE.ata * (0.55 + 0.45*(cls/BASE.classes));
+      var teach = com + sup;
+      years.push(y); students.push(st); common.push(com); support.push(sup); ata.push(at); teachers.push(teach);
+      // reclutamento: pensionamenti sull'organico + variazione netta posti
+      if(t>0){
+        var pens = teachers[t-1]*(p.pens/100);
+        var delta = teach - teachers[t-1];
+        var rec = Math.max(0, pens + delta);
+        recruit.push(rec);
+      } else { recruit.push(0); }
+    }
+    // saldo per area al 2035 (fabbisogno - posti attuali), con effetto mobilità
+    var stEnd = students[students.length-1];
+    var factorEnd = (stEnd/BASE.students); // scala del fabbisogno posti
+    var regions = AREAS.map(function(a){
+      var areaTrend = Math.pow(1 + g + a.trendAdj, BASE.endYear-BASE.startYear);
+      var need = a.posts * areaTrend;
+      // mobilità sposta domanda verso Nord/Centro
+      var mobShift = (p.mob*1000) * (a.trendAdj>0 ? 0.35 : -0.30);
+      var saldo = (need + mobShift) - a.posts;
+      return {name:a.name, saldo:saldo, need:need, posts:a.posts};
+    });
+    return {years:years, students:students, common:common, support:support, ata:ata, teachers:teachers, recruit:recruit, regions:regions};
+  }
+
+  // ---------- formattatori ----------
+  function fmt(n){ return Math.round(n).toLocaleString('it-IT'); }
+  function fmtK(n){ return (Math.round(n/100)/10).toLocaleString('it-IT'); } // migliaia con 1 dec
+  function fmtM(n){ return (Math.round(n/10000)/100).toLocaleString('it-IT'); } // milioni 2 dec
+  function signPct(a,b){ var d=(a-b)/b*100; return (d>=0?'+':'\u2212')+Math.abs(d).toFixed(1)+'%'; }
+  function signAbs(n){ return (n>=0?'+':'\u2212')+fmt(Math.abs(n)); }
+
+  // ---------- disegno grafici SVG ----------
+  var W=560, H=210, PL=44, PR=14, PT=14, PB=26;
+  function xScale(i,n){ return PL + (W-PL-PR)*(i/(n-1)); }
+  function lineChart(el, years, series){
+    var all=[]; series.forEach(function(s){ all=all.concat(s.data); });
+    var min=Math.min.apply(null,all), max=Math.max.apply(null,all);
+    var pad=(max-min)*0.12||1; min-=pad; max+=pad;
+    function y(v){ return PT + (H-PT-PB)*(1-(v-min)/(max-min)); }
+    var svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" xmlns="http://www.w3.org/2000/svg" style="display:block;">';
+    // gridlines + y labels
+    for(var g=0; g<=4; g++){
+      var val=min+(max-min)*g/4; var yy=y(val);
+      svg+='<line x1="'+PL+'" y1="'+yy+'" x2="'+(W-PR)+'" y2="'+yy+'" stroke="#EEF1F4"/>';
+      svg+='<text x="'+(PL-6)+'" y="'+(yy+3)+'" font-size="9" fill="#7A8494" text-anchor="end">'+series[0].fmt(val)+'</text>';
+    }
+    // x labels
+    for(var i=0;i<years.length;i++){ if(i%2===0||i===years.length-1){ svg+='<text x="'+xScale(i,years.length)+'" y="'+(H-8)+'" font-size="9" fill="#7A8494" text-anchor="middle">'+("'"+String(years[i]).slice(2))+'</text>'; } }
+    series.forEach(function(s){
+      var d='';
+      s.data.forEach(function(v,i){ d+=(i===0?'M':'L')+xScale(i,years.length).toFixed(1)+' '+y(v).toFixed(1)+' '; });
+      if(s.area){ var d2=d+'L'+xScale(years.length-1,years.length)+' '+(H-PB)+' L'+PL+' '+(H-PB)+' Z'; svg+='<path d="'+d2+'" fill="'+s.color+'" opacity="0.08"/>'; }
+      svg+='<path d="'+d+'" fill="none" stroke="'+s.color+'" stroke-width="'+(s.w||2.4)+'"'+(s.dash?' stroke-dasharray="5 4"':'')+'/>';
+      // last point marker
+      var li=s.data.length-1;
+      svg+='<circle cx="'+xScale(li,years.length)+'" cy="'+y(s.data[li])+'" r="3.2" fill="'+s.color+'"/>';
+    });
+    svg+='</svg>';
+    el.innerHTML=svg;
+  }
+
+  function stackedBars(el, years, a, b, colorA, colorB, fmtFn){
+    var totals=a.map(function(v,i){ return v+b[i]; });
+    var max=Math.max.apply(null,totals)*1.08;
+    var svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" xmlns="http://www.w3.org/2000/svg" style="display:block;">';
+    for(var g=0; g<=4; g++){ var val=max*g/4; var yy=PT+(H-PT-PB)*(1-g/4); svg+='<line x1="'+PL+'" y1="'+yy+'" x2="'+(W-PR)+'" y2="'+yy+'" stroke="#EEF1F4"/><text x="'+(PL-6)+'" y="'+(yy+3)+'" font-size="9" fill="#7A8494" text-anchor="end">'+fmtFn(val)+'</text>'; }
+    var n=years.length; var bw=(W-PL-PR)/n*0.6;
+    for(var i=0;i<n;i++){
+      var cx=xScale(i,n)-bw/2;
+      var hA=(H-PT-PB)*(a[i]/max), hB=(H-PT-PB)*(b[i]/max);
+      var yB=(H-PB)-hB, yA=yB-hA;
+      svg+='<rect x="'+cx+'" y="'+yA+'" width="'+bw+'" height="'+hA+'" fill="'+colorA+'" rx="1"/>';
+      svg+='<rect x="'+cx+'" y="'+yB+'" width="'+bw+'" height="'+hB+'" fill="'+colorB+'" rx="1"/>';
+      if(i%2===0||i===n-1){ svg+='<text x="'+xScale(i,n)+'" y="'+(H-8)+'" font-size="9" fill="#7A8494" text-anchor="middle">'+("'"+String(years[i]).slice(2))+'</text>'; }
+    }
+    svg+='</svg>'; el.innerHTML=svg;
+  }
+
+  function barChart(el, years, data, color, fmtFn){
+    var max=Math.max.apply(null,data)*1.1||1;
+    var svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" xmlns="http://www.w3.org/2000/svg" style="display:block;">';
+    for(var g=0; g<=4; g++){ var val=max*g/4; var yy=PT+(H-PT-PB)*(1-g/4); svg+='<line x1="'+PL+'" y1="'+yy+'" x2="'+(W-PR)+'" y2="'+yy+'" stroke="#EEF1F4"/><text x="'+(PL-6)+'" y="'+(yy+3)+'" font-size="9" fill="#7A8494" text-anchor="end">'+fmtFn(val)+'</text>'; }
+    var n=years.length; var bw=(W-PL-PR)/n*0.6;
+    for(var i=0;i<n;i++){ if(data[i]<=0) { if(i%2===0){ svg+='<text x="'+xScale(i,n)+'" y="'+(H-8)+'" font-size="9" fill="#7A8494" text-anchor="middle">'+("'"+String(years[i]).slice(2))+'</text>'; } continue; }
+      var h=(H-PT-PB)*(data[i]/max); var cx=xScale(i,n)-bw/2;
+      svg+='<rect x="'+cx+'" y="'+((H-PB)-h)+'" width="'+bw+'" height="'+h+'" fill="'+color+'" rx="1"/>';
+      if(i%2===0||i===n-1){ svg+='<text x="'+xScale(i,n)+'" y="'+(H-8)+'" font-size="9" fill="#7A8494" text-anchor="middle">'+("'"+String(years[i]).slice(2))+'</text>'; }
+    }
+    svg+='</svg>'; el.innerHTML=svg;
+  }
+
+  function divergingBars(el, regions){
+    var vals=regions.map(function(r){ return r.saldo; });
+    var maxAbs=Math.max.apply(null, vals.map(Math.abs))*1.15||1;
+    var rowH=34, top=8; var h=regions.length*rowH+top+18;
+    var w=560, mid=w*0.52, labelW=90;
+    var svg='<svg viewBox="0 0 '+w+' '+h+'" width="100%" xmlns="http://www.w3.org/2000/svg" style="display:block;">';
+    svg+='<line x1="'+mid+'" y1="'+top+'" x2="'+mid+'" y2="'+(h-18)+'" stroke="#DADCE0"/>';
+    regions.forEach(function(r,i){
+      var cy=top+i*rowH+rowH/2;
+      svg+='<text x="6" y="'+(cy+4)+'" font-size="11" fill="#17202A" font-weight="600">'+r.name+'</text>';
+      var len=(mid-labelW-8)*(Math.abs(r.saldo)/maxAbs);
+      var col=r.saldo>=0? '#2E7D32':'#C62828';
+      if(r.saldo>=0){ svg+='<rect x="'+mid+'" y="'+(cy-9)+'" width="'+len+'" height="18" fill="'+col+'" rx="2"/>'; svg+='<text x="'+(mid+len+6)+'" y="'+(cy+4)+'" font-size="11" font-weight="700" fill="'+col+'">'+signAbs(r.saldo)+'</text>'; }
+      else { svg+='<rect x="'+(mid-len)+'" y="'+(cy-9)+'" width="'+len+'" height="18" fill="'+col+'" rx="2"/>'; svg+='<text x="'+(mid-len-6)+'" y="'+(cy+4)+'" font-size="11" font-weight="700" fill="'+col+'" text-anchor="end">'+signAbs(r.saldo)+'</text>'; }
+    });
+    svg+='<text x="'+mid+'" y="'+(h-4)+'" font-size="9" fill="#7A8494" text-anchor="middle">esuberi \u2190 | \u2192 carenze</text>';
+    svg+='</svg>'; el.innerHTML=svg;
+  }
+
+  // ---------- narrativa dinamica ----------
+  function narrative(p, r){
+    var stEnd=r.students[r.students.length-1];
+    var dStud=stEnd-BASE.students;
+    var dTeach=r.teachers[r.teachers.length-1]-(BASE.common+BASE.support);
+    var recTot=r.recruit.reduce(function(a,b){return a+b;},0);
+    var esuberi=r.regions.filter(function(x){return x.saldo<0;}).reduce(function(a,b){return a+Math.abs(b.saldo);},0);
+    var txt='<strong>Lettura dello scenario.</strong> Con un trend iscrizioni del '+(p.natal>=0?'+':'\u2212')+Math.abs(p.natal).toFixed(1)+'% annuo, al 2035 la scuola statale conterebbe circa <strong>'+fmtM(stEnd)+' milioni di studenti</strong> ('+signAbs(dStud)+' rispetto a oggi). Il fabbisogno di posti docente si attesterebbe su <strong>'+fmt(r.teachers[r.teachers.length-1])+'</strong> ('+signAbs(dTeach)+'), mentre i pensionamenti richiederebbero circa <strong>'+fmt(recTot)+' assunzioni</strong> cumulate nel periodo. ';
+    if(esuberi>1000){ txt+='Emergerebbero circa <strong>'+fmt(esuberi)+' posti in esubero</strong> concentrati nel Mezzogiorno e nelle Isole, da riassorbire con mobilit&agrave; volontaria, riconversione e turnover &mdash; mentre il Nord resterebbe in carenza. '; }
+    if(p.rif>0){ txt+='La spinta ai nuovi indirizzi ('+p.rif+'%) richiederebbe la riconversione di quote significative di cattedre verso classi di concorso tecnico-STEM. '; }
+    txt+='&Egrave; esattamente il tipo di trade-off che il Digital Twin rende visibile <em>prima</em> di decidere.';
+    return txt;
+  }
+
+  // ---------- render ----------
+  function labels(){
+    document.getElementById('v-natal').textContent=(sliders.natal.value>=0?'+':'\u2212')+Math.abs(sliders.natal.value)+'%';
+    document.getElementById('v-aic').textContent=parseFloat(sliders.aic.value).toLocaleString('it-IT');
+    document.getElementById('v-sost').textContent=parseFloat(sliders.sost.value).toLocaleString('it-IT')+'%';
+    document.getElementById('v-pens').textContent=parseFloat(sliders.pens.value).toLocaleString('it-IT')+'%';
+    document.getElementById('v-rif').textContent=sliders.rif.value+'%';
+    document.getElementById('v-mob').textContent=sliders.mob.value+'k';
+  }
+
+  function render(){
+    labels();
+    var p=params(); var r=simulate(p);
+    // KPI
+    var stEnd=r.students[r.students.length-1];
+    var teachEnd=r.teachers[r.teachers.length-1];
+    var ataEnd=r.ata[r.ata.length-1];
+    var recTot=r.recruit.reduce(function(a,b){return a+b;},0);
+    document.getElementById('k-stud').innerHTML=fmtM(stEnd)+'<span class="u"> mln</span>';
+    document.getElementById('k-stud-d').textContent=signPct(stEnd,BASE.students)+' vs oggi';
+    document.getElementById('k-doc').textContent=fmt(teachEnd);
+    var dDoc=document.getElementById('k-doc-d'); dDoc.textContent=signPct(teachEnd,BASE.common+BASE.support)+' vs oggi'; dDoc.className='kpi-delta '+(teachEnd>=BASE.common+BASE.support?'pos':'neg');
+    document.getElementById('k-ata').textContent=fmt(ataEnd);
+    var dAta=document.getElementById('k-ata-d'); dAta.textContent=signPct(ataEnd,BASE.ata)+' vs oggi'; dAta.className='kpi-delta '+(ataEnd>=BASE.ata?'pos':'neg');
+    document.getElementById('k-rec').textContent=fmt(recTot);
+    // charts
+    lineChart(document.getElementById('ch-students'), r.years, [
+      {data:r.students, color:'#103A6B', area:true, fmt:function(v){return fmtM(v);}}
+    ]);
+    stackedBars(document.getElementById('ch-teachers'), r.years, r.support, r.common, '#009B77', '#103A6B', function(v){return fmtK(v);});
+    barChart(document.getElementById('ch-recruit'), r.years, r.recruit, '#B8860B', function(v){return fmtK(v);});
+    divergingBars(document.getElementById('ch-regions'), r.regions);
+    document.getElementById('sim-narrative').innerHTML=narrative(p,r);
+  }
+
+  // ---------- eventi ----------
+  ids.forEach(function(k){ sliders[k].addEventListener('input', function(){ clearScn(); render(); }); });
+  document.getElementById('sim-reset').addEventListener('click', function(){ applyScenario('base'); });
+
+  var scnBtns=document.querySelectorAll('.scn-btn');
+  function clearScn(){ scnBtns.forEach(function(b){ b.classList.remove('active'); }); }
+  function applyScenario(name){
+    var s=SCENARIOS[name]; if(!s) return;
+    sliders.natal.value=s.natal; sliders.aic.value=s.aic; sliders.sost.value=s.sost;
+    sliders.pens.value=s.pens; sliders.rif.value=s.rif; sliders.mob.value=s.mob;
+    clearScn();
+    var btn=document.querySelector('.scn-btn[data-scn="'+name+'"]'); if(btn) btn.classList.add('active');
+    render();
+  }
+  scnBtns.forEach(function(b){ b.addEventListener('click', function(){ applyScenario(b.getAttribute('data-scn')); }); });
+
+  render();
+})();
+</script>
+
+</body>
+</html>

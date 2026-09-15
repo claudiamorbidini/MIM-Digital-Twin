@@ -1,0 +1,29 @@
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Dati locali / estrazioni (non versionare microdati)
+data/
+*.parquet
+*.csv
+!docs/**/*.csv
+
+# Temporanei
+*.tmp
+*.log
+chrome_err.txt
+
+# Non fanno parte della dashboard su GitHub
+assets/
+gaia-demo/
+.nojekyll
+.github/
+Digital Twin MIM demo.html
+G.A.I.A.*
+gen_*.py
+gen-ecosistema.js
+gen-ecosistema-slide.js
